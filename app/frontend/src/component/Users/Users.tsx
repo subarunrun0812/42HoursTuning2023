@@ -33,10 +33,12 @@ import {
   useCallback,
   useState,
 } from "react";
+//Next.jsのフックで現在のルーティング情報にアクセスするために使用される
 import { useRouter } from "next/router";
 import { Path } from "@src/utils/routerPath";
 import qs from "qs";
 
+// Material-UIのカスタムスタイルを作成するための関数
 const useStyles = makeStyles((theme) => ({
   container: {
     marginTop: theme.spacing(9),
@@ -61,9 +63,11 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+// ユーザーが検索対象を選択し、検索クエリを入力し、検索を実行するためのUIを提供しています。
 const Search: React.FC = () => {
   const classes = useStyles();
   const router = useRouter();
+	// targetsという名前の状態を作成。初期値は空。第2引数は状態を更新するための関数
   const [targets, setTargets] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
