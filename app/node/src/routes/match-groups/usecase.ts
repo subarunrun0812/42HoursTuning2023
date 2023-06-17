@@ -10,7 +10,7 @@ import {
   hasSkillNameRecord,
   insertMatchGroup,
 } from "./repository";
-import { getUserForFilter, getUsersWithFilter } from "../users/repository";
+import { getUserForFilter, getUsersWithFilter, convertIdToValue } from "../users/repository";
 
 export const checkSkillsRegistered = async (
   skillNames: string[]
@@ -39,7 +39,7 @@ export const createMatchGroup = async (
       return;
     }
     const random = Math.floor(Math.random() * filterMembers.length);
-    const candidate = filterMembers.splice(random, random)[0];
+    const candidate = await convertIdToValue(filterMembers.splice(random, random)[0]);
     if (
       matchGroupConfig.departmentFilter !== "none" &&
       !isPassedDepartmentFilter(
