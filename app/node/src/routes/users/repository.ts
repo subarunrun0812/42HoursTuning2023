@@ -249,8 +249,11 @@ export const getUserForFilter = async (
       [userId]
     );
   }
-  const user = userRows[0];
+  return convertIdToValue(userRows[0]);
+}
 
+const convertIdToValue = async (
+  user: RowDataPacket): Promise<UserForFilter> => {
   const [officeNameRow] = await pool.query<RowDataPacket[]>(
     `SELECT office_name FROM office WHERE office_id = ?`,
     [user.office_id]
@@ -275,3 +278,15 @@ export const getUserForFilter = async (
 
   return convertToUserForFilter(user);
 };
+
+export const getUsersWithFilter = async (): Promise<UserForFilter[]> => {
+  let userRows: RowDataPacket[];
+  [userRows] = await pool.query<RowDataPacket[]>(
+    "SELECT user_id, user_name, office_id, user_icon_id FROM user"
+  );
+  const userFilterRows: UserForFilter[] = [];
+  for (const user in userRows) {
+    userFilterRows.push(await convertIdToValue(user));
+  }
+  return (userFilterRows);
+}

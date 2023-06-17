@@ -10,7 +10,7 @@ import {
   hasSkillNameRecord,
   insertMatchGroup,
 } from "./repository";
-import { getUserForFilter } from "../users/repository";
+import { getUserForFilter, getUsersWithFilter } from "../users/repository";
 
 export const checkSkillsRegistered = async (
   skillNames: string[]
@@ -30,14 +30,16 @@ export const createMatchGroup = async (
 ): Promise<MatchGroupDetail | undefined> => {
   const owner = await getUserForFilter(matchGroupConfig.ownerId);
   let members: UserForFilter[] = [owner];
+  const filterMembers = await getUsersWithFilter();
   const startTime = Date.now();
-  while (members.length < matchGroupConfig.numOfMembers) {
+  while (members.length < matchGroupConfig.numOfMembers && filterMembers.length != 0) {
     // デフォルトは50秒でタイムアウト
     if (Date.now() - startTime > (!timeout ? 50000 : timeout)) {
       console.error("not all members found before timeout");
       return;
     }
-    const candidate = await getUserForFilter();
+    const random = Math.floor(Math.random() * filterMembers.length);
+    const candidate = filterMembers.splice(random, random)[0];
     if (
       matchGroupConfig.departmentFilter !== "none" &&
       !isPassedDepartmentFilter(
