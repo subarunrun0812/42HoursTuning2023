@@ -333,7 +333,7 @@ export const judgeUsers = async (
 export const getUsersWithFilter = async (): Promise<RowDataPacket[]> => {
   let userRows: RowDataPacket[];
   [userRows] = await pool.query<RowDataPacket[]>(
-    "SELECT user_id, user_name, office_id, user_icon_id FROM user"
+    "SELECT user_id, user_name, office_id FROM user"
   );
   return (userRows);
 }
