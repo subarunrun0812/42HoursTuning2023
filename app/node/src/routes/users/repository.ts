@@ -1,6 +1,6 @@
 import { RowDataPacket } from "mysql2";
 import pool from "../../util/mysql";
-import { SearchedUser, User, UserForFilter } from "../../model/types";
+import { SearchedUser, User, MatchGroupConfig, UserForFilter } from "../../model/types";
 import {
   convertToSearchedUser,
   convertToUserForFilter,
@@ -280,6 +280,56 @@ export const convertIdToValue = async (
   return convertToUserForFilter(user);
 };
 
+export const judgeUsers = async (
+  candidate: RowDataPacket,
+  owner: UserForFilter,
+  config: MatchGroupConfig
+): Promise<Boolean> => {
+  if (config.officeFilter !== "none") {
+    const [officeNameRow] = await pool.query<RowDataPacket[]>(
+      `SELECT office_name FROM office WHERE office_id = ?`,
+      [candidate.office_id]
+    );
+    if (!isPassedOfficeFilter(
+        config.officeFilter,
+        owner.officeName,
+        officeNameRow[0].office_name)) {
+          console.log(`${candidate.user_id} is not passed office filter`);
+          return (false);
+        }
+  }
+  if (config.departmentFilter !== "none") {
+    const [departmentNameRow] = await pool.query<RowDataPacket[]>(
+      `SELECT department_name FROM department WHERE department_id = (SELECT department_id FROM department_role_member WHERE user_id = ? AND belong = true)`,
+      [candidate.user_id]
+    );
+    if (
+      !isPassedDepartmentFilter(
+        config.departmentFilter,
+        owner.departmentName,
+        departmentNameRow[0].department_name
+      )
+    ) {
+      console.log(`${candidate.user_id} is not passed department filter`);
+      return (false);
+    }
+  }
+  if (config.skillFilter.length > 0) {
+    const [skillNameRows] = await pool.query<RowDataPacket[]>(
+      `SELECT skill_name FROM skill WHERE skill_id IN (SELECT skill_id FROM skill_member WHERE user_id = ?)`,
+      [candidate.user_id]
+    );
+    if (
+      !config.skillFilter.some((skill) =>
+        skillNameRows.map((row) => row.skill_name).includes(skill))
+      ) {
+      console.log(`${candidate.user_id} is not passed skill filter`);
+      return (false);
+    }
+  }
+  return true;
+}
+
 export const getUsersWithFilter = async (): Promise<RowDataPacket[]> => {
   let userRows: RowDataPacket[];
   [userRows] = await pool.query<RowDataPacket[]>(
@@ -287,3 +337,23 @@ export const getUsersWithFilter = async (): Promise<RowDataPacket[]> => {
   );
   return (userRows);
 }
+
+const isPassedDepartmentFilter = (
+  departmentFilter: string,
+  ownerDepartment: string,
+  candidateDepartment: string
+) => {
+  return departmentFilter === "onlyMyDepartment"
+    ? ownerDepartment === candidateDepartment
+    : ownerDepartment !== candidateDepartment;
+};
+
+const isPassedOfficeFilter = (
+  officeFilter: string,
+  ownerOffice: string,
+  candidateOffice: string
+) => {
+  return officeFilter === "onlyMyOffice"
+    ? ownerOffice === candidateOffice
+    : ownerOffice !== candidateOffice;
+};
